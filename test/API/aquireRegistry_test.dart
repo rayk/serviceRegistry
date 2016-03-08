@@ -22,8 +22,8 @@ void main() {
   });
 
   /// Adding a service and it should appear in the registry.
-  group('Register a service with.', () {
-    test('Should get updated Registry when I register a service.', () async {
+  group('Register a new service:', () {
+    test('Should return a Registry after service is registered.', () async {
       var context = new path.Context();
       Uri servicePath = new Uri.file(context.join(
           context.current, "test", 'testEchoService', 'echoService.dart'));
@@ -32,11 +32,34 @@ void main() {
       });
     });
 
+    test('Should have a entry in the Registry for the new service .', () {});
+
+    test('Should the type and version number as declared by the service..',
+        () {});
+
     test('Should error out when handed a broken or non existent URI.', () {});
+
+    test('Should be able to register multiple instances of the same service.',
+        () {});
+
+    test('Should discriminate instances of the same service and version.',
+        () {});
   });
 
   /// Lookup a service by providing the enum for the service type.
-  group('Query for a service.', () {
+  group('Query for a service:', () {
     test('Should  .', () {});
+  });
+
+  group("Service ready for use:", () {
+    test('Should return a channel to communicate with service.  .', () {});
+
+    test('Should return a service description via the channel.', () {});
+  });
+  group("Unregister a service:", () {
+    test('Should return a Registry after a service is unregister.', () {});
+
+    test('Should throw expection when unregistering non-existing service.',
+        () {});
   });
 }

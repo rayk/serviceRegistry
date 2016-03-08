@@ -4,7 +4,6 @@ import 'dart:async';
 import 'dart:isolate';
 
 import 'package:serviceRegistry/src/core.dart';
-import 'package:serviceRegistry/src/serviceRegistration.dart';
 
 export 'package:serviceRegistry/src/core.dart';
 
@@ -25,7 +24,10 @@ Future<ServiceRegistry> provisionService(Uri pathToServiceEntryPoint) async {
         .then((Isolate iso) {
       assert(iso != null);
     });
-  } catch (e) {}
+    // Any Expection shall cause a crash.
+  } catch (e) {
+    print(e.message);
+  }
 
   // Attempt to provision
   // Update Registry
@@ -44,3 +46,6 @@ Future<ServiceRegistry> terminateService(
     ServiceRegistration targetService) async {
   return serviceRegister();
 }
+
+/// Private
+_registerIsolate() {}
