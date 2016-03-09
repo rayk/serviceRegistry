@@ -15,16 +15,10 @@ ServiceRegistry serviceRegister() => new ServiceRegistry();
 ///
 /// Requires the File URI to the Main Entry Point of the Service. Will
 /// Error out if the service can not be established.
-Future<ServiceRegistry> provisionService(Uri pathToServiceEntryPoint) async {
+Future<ServiceRegistry> provisionService(Uri pathToServiceEntryPoint,
+    {Uri serviceCodePackage}) async {
   try {
-    List startArg = [];
-    int startCode = 0000;
-    await Isolate
-        .spawnUri(pathToServiceEntryPoint, startArg, startCode)
-        .then((Isolate iso) {
-      assert(iso != null);
-    });
-    // Any Expection shall cause a crash.
+    _registerIsolate(pathToServiceEntryPoint);
   } catch (e) {
     print(e.message);
   }
@@ -47,5 +41,17 @@ Future<ServiceRegistry> terminateService(
   return serviceRegister();
 }
 
-/// Private
-_registerIsolate() {}
+/// Privately register the service.
+_registerIsolate(Uri serviceEntryPoint, {bool channelRequired: true}) async {
+  ReceivePort tempProvisionPort = new ReceivePort(); // Listen to during rego.
+  ReceivePort actualServicePort =
+      new ReceivePort(); // Request to actual service
+  List startArgs = [tempProvisionPort.sendPort, actualServicePort.sendPort];
+  int startCode;
+  channelRequired ? startCode = 9999 : startCode = 0000;
+  await Isolate
+      .spawnUri(serviceEntryPoint, startArgs, startCode)
+      .then((Isolate iso) {
+    new ServiceRegistration(iso, tempProvisionPort, actualServicePort);
+  });
+}

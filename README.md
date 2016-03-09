@@ -1,8 +1,21 @@
 # Service Registry
 
 Provides a registry of each of the services running on their own isolate and reference to
-the ports which are required to deal with them.
+the ports which are required send messages to that service.
 
+## Provision
+One of the main services provided, the registry takes care of all the exchanging
+of port and the configuration of the underlying Isolate. All that is required is
+the path to the service entry point and the package path of where the source is
+located for the service.
+
+## Termination
+By passing in the registration for a particular service the can terminate a the by orderly shutdown of the service, the associated ports and channels.
+
+## Manage
+The registery uses it best effort to manage and services this it registers. Should the service become unavailable
+
+## Scoped
 The registry is intended to be scope limited and can not be used to pass a
 dependency beyond it's immediate scope. Services like dependencies should only
 point in one direction.
