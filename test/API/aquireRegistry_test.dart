@@ -21,18 +21,17 @@ void main() {
     });
   });
 
-  /// Adding a service and it should appear in the registry.
   group('Register a new service:', () {
-    test('Should return a Registry after service is registered.', () async {
-      var context = new path.Context();
-      Uri servicePath = new Uri.file(context.join(
-          context.current, "test", 'testEchoService', 'echoService.dart'));
-      provisionService(servicePath).then((ServiceRegistry svry) {
-        expect(svry, isNotNull);
-      });
+    var entryPoint =
+        new List.from(['lib', 'src', 'echo_service', 'entry_point.dart']);
+    var package = new List.from(['lib', 'src', 'echo_service']);
+
+    test('Should return a Registration after service is registered.', () async {
+      ServiceRegistration rego = await startService(entryPoint, package);
     });
 
-    test('Should have a entry in the Registry for the new service .', () {});
+    test('Should have a entry in the Registry for the new service .',
+        () async {});
 
     test('Should the type and version number as declared by the service..',
         () {});

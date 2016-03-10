@@ -18,11 +18,11 @@ main(List startupArgs, int startupCode) {
   assert(startupArgs.isNotEmpty);
   assert(startupCode != null);
   final String serviceName = "EchoService";
-  final int serviceVersion = 1;
+  final String serviceVersion = '1';
   final ReceivePort actualServiceRequestPort = new ReceivePort();
   final ReceivePort tempProvisionReceivePort = new ReceivePort();
   SendPort outBoundMessagePort;
-  final int serviceIdent = Isolate.current.hashCode;
+  final String serviceIdent = Isolate.current.hashCode.toString();
 
   /// Service Credentials return back to provisioner as proof of life.
   final Map<String, String> serviceCreds = {
@@ -104,7 +104,7 @@ echoService(
     Map serviceDetails, ReceivePort serviceRequest, SendPort serviceResponse) {
   SendPort responsePort = serviceDetails['ServiceResponse'];
   String serviceName = serviceDetails['ServiceName'];
-  int serviceVersion = serviceDetails['ServiceVersion'];
+  String serviceVersion = serviceDetails['ServiceVersion'];
   String serviceId = serviceDetails['ServiceId'];
 
   serviceRequest.listen((Map request) {

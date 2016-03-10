@@ -1,7 +1,20 @@
 # Service Registry
 
 Provides a registry of each of the services running on their own isolate and reference to
-the ports which are required send messages to that service.
+the ports which are required send messages to that service. Intended to remove the
+burden from the developer of managing Isolates, exchanging ports and keeping services
+alive.
+
+## Usage
+Simply as service you need from the registry and hooking into the channels.
+
+```dart
+  /// Registry is a Singleton.
+  ServiceRegistry registry = new ServiceRegistry()
+
+  /// Would return the echo service. Use any list operaters you like...
+  registry.availableServices.singleWhere((s) => (s.Type == 'Echo Service'));
+```
 
 ## Provision
 One of the main services provided, the registry takes care of all the exchanging
