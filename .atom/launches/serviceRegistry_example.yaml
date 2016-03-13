@@ -1,0 +1,9 @@
+# Cli launch configuration for example/serviceRegistry_example.dart.
+type: cli
+path: example/serviceRegistry_example.dart
+
+cli:
+  args: 
+  cwd: 
+  checked: true
+  debug: true

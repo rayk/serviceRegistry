@@ -1,7 +1,8 @@
 library echoService;
 
-import 'dart:isolate';
+import 'dart:developer';
 import 'dart:io';
+import 'dart:isolate';
 
 /// This service is used as a test service to determine if a new service can be
 /// provision.
@@ -36,6 +37,73 @@ main(List startupArgs, int startupCode) {
     'ServiceRequestPort': actualServiceRequestPort.sendPort,
   };
 
+  /// **Executes the Port Exchange Protocol.**
+  ///
+  /// When an Isolate is first the StartupArgs & StartupCode is the only way
+  /// to pass parameters in. Depending on the code which the Isolate is to execute
+  /// we may need to establish ports for the two way communication. That is
+  /// purpose of this protocol, handshake.
+  ///
+  /// 1. The Provisioner request two way communication by passing '9999' in the
+  /// startup code.
+  ///
+  /// 2. This Isolate check to see if the provisioner has passed us a port we
+  /// can send to them on. This will be in the 'startupArgs'. If it is there
+  /// one can assume the provisioner is holding the receive end of the port. They
+  /// may or may not started to listen yet.
+  ///
+  /// 3. This Isolate creates that's it 'inBoundMessagePort' and creates a sendPort
+  /// from it. Then by using the SendPort the provisioner has provided in startupArgs,
+  /// a credential message is sent to the provisioner. Contained within that message
+  /// is the SendPort created from the inBoundMessagePort. The Provider then thats
+  /// that message as proof that the Isolate is running.
+  ///
+  /// 4. The provisioner registers this Isolate and the service it is running when
+  /// it receives the credentials map. Upon registration the provisioner may do further
+  /// configurations.
+  exchangePorts(List startArgs, Map credentials) {
+    SendPort temporaryXchgPort = startArgs[0];
+    assert(temporaryXchgPort != null);
+    temporaryXchgPort.send(credentials);
+    log('Ports Exchanged');
+  }
+
+  ////////////////////////////////
+  /// ** Actual Echo Service **
+  ///
+  /// This service just echos back to the requester the payload they sent, with
+  /// some overhead to identify the service.
+  ///
+  /// ServiceRequestPort is Listened to (Hence it can not be one used for exchange)
+  /// ServiceResponsePort has response to consumer request sent on.
+  echoService(Map serviceDetails, ReceivePort serviceRequest,
+      SendPort serviceResponse) {
+    SendPort responsePort = serviceDetails['ServiceResponse'];
+    String serviceName = serviceDetails['ServiceName'];
+    String serviceVersion = serviceDetails['ServiceVersion'];
+    String serviceId = serviceDetails['ServiceId'];
+    log('Echo Service');
+
+    serviceRequest.listen((Map request) {
+      log('Message Received');
+      Map response = {
+        'ServiceRequestReceived': new DateTime.now().microsecondsSinceEpoch,
+        'ServiceRequestTrxNum': request.containsKey('requestId')
+            ? request['requestId']
+            : 'No Trx Number Supplied.',
+        'ServiceName': serviceName,
+        'ServiceVersion': serviceVersion,
+        'ServiceId': serviceId,
+        'ServiceResponse': request.containsKey('payload')
+            ? request['payload']
+            : 'Payload of this request was empty',
+        'ServiceResponseDispatched': new DateTime.now().microsecondsSinceEpoch
+      };
+
+      responsePort.send(response);
+    });
+  }
+
   // Has the provisioner requested to send futher messages from this service.
   bool isPortExchangeRequested() => startupCode == 9999 ? true : false;
 
@@ -60,68 +128,4 @@ main(List startupArgs, int startupCode) {
           ? exchangePorts(startupArgs, serviceCreds)
           : sendProvisionFail()
       : setupService(serviceCreds, actualServiceRequestPort);
-}
-
-/// **Executes the Port Exchange Protocol.**
-///
-/// When an Isolate is first the StartupArgs & StartupCode is the only way
-/// to pass parameters in. Depending on the code which the Isolate is to execute
-/// we may need to establish ports for the two way communication. That is
-/// purpose of this protocol, handshake.
-///
-/// 1. The Provisioner request two way communication by passing '9999' in the
-/// startup code.
-///
-/// 2. This Isolate check to see if the provisioner has passed us a port we
-/// can send to them on. This will be in the 'startupArgs'. If it is there
-/// one can assume the provisioner is holding the receive end of the port. They
-/// may or may not started to listen yet.
-///
-/// 3. This Isolate creates that's it 'inBoundMessagePort' and creates a sendPort
-/// from it. Then by using the SendPort the provisioner has provided in startupArgs,
-/// a credential message is sent to the provisioner. Contained within that message
-/// is the SendPort created from the inBoundMessagePort. The Provider then thats
-/// that message as proof that the Isolate is running.
-///
-/// 4. The provisioner registers this Isolate and the service it is running when
-/// it receives the credentials map. Upon registration the provisioner may do further
-/// configurations.
-exchangePorts(List startArgs, Map credentials) {
-  SendPort temporaryXchgPort = startArgs[0];
-  assert(temporaryXchgPort != null);
-  temporaryXchgPort.send(credentials);
-}
-
-////////////////////////////////
-/// ** Actual Echo Service **
-///
-/// This service just echos back to the requester the payload they sent, with
-/// some overhead to identify the service.
-///
-/// ServiceRequestPort is Listened to (Hence it can not be one used for exchange)
-/// ServiceResponsePort has response to consumer request sent on.
-echoService(
-    Map serviceDetails, ReceivePort serviceRequest, SendPort serviceResponse) {
-  SendPort responsePort = serviceDetails['ServiceResponse'];
-  String serviceName = serviceDetails['ServiceName'];
-  String serviceVersion = serviceDetails['ServiceVersion'];
-  String serviceId = serviceDetails['ServiceId'];
-
-  serviceRequest.listen((Map request) {
-    Map response = {
-      'ServiceRequestReceived': new DateTime.now().microsecondsSinceEpoch,
-      'ServiceRequestTrxNum': request.containsKey('requestId')
-          ? request['requestId']
-          : 'No Trx Number Supplied.',
-      'ServiceName': serviceName,
-      'ServiceVersion': serviceVersion,
-      'ServiceId': serviceId,
-      'ServiceResponse': request.containsKey('payload')
-          ? request['payload']
-          : 'Payload of this request was empty',
-      'ServiceResponseDispatched': new DateTime.now().microsecondsSinceEpoch
-    };
-
-    responsePort.send(response);
-  });
 }
