@@ -2,10 +2,11 @@ library api;
 
 import 'dart:async';
 import 'dart:isolate';
-import 'package:serviceRegistry/src/path_functions.dart';
-import 'package:serviceRegistry/src/isolate_functions.dart';
-
+import 'dart:developer';
 import 'package:serviceRegistry/src/core.dart';
+import 'package:serviceRegistry/src/isolate_functions.dart';
+import 'package:serviceRegistry/src/path_functions.dart';
+
 export 'package:serviceRegistry/src/core.dart';
 
 /// Returns an Immutable ServiceRegistry containing all the current
@@ -23,11 +24,11 @@ Future<ServiceRegistration> startService(
   Uri packageRoot = toUri(servicePackageRoot);
   try {
     return spawnIsolate(entryPoint, packageRoot).then((List iso) {
-      assert(iso[0] is ReceivePort);
+      assert(iso[0] is ReceivePort); // Provision Port
       return identifyService(iso[0]).then((Map svcDetails) {
         assert(svcDetails['ServiceRequestPort'] is SendPort);
-        assert(iso[1] is ReceivePort);
-        assert(iso[2] is Isolate);
+        assert(iso[1] is ReceivePort); // ServiceReponse
+        assert(iso[2] is Isolate); // Actual Underlying Isolate
         return new ServiceRegistration(iso[2], svcDetails, iso[1]);
       });
     });

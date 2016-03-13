@@ -20,9 +20,9 @@ main() async {
   Map request = {'requestId': "209358", 'payload': 'Hello it is me'};
 
   inbound.listen((Map msg) {
-    log('Message Received;');
+    log('Message Received from Echo $msg;');
   });
 
   outbound.add(request);
-  log('Message Sent');
+  log('Message Sent to Echo Service');
 }

@@ -20,9 +20,10 @@ main(List startupArgs, int startupCode) {
   assert(startupCode != null);
   final String serviceName = "EchoService";
   final String serviceVersion = '1';
-  final ReceivePort actualServiceRequestPort = new ReceivePort();
+  final ReceivePort serviceRequestPort = new ReceivePort();
   final ReceivePort tempProvisionReceivePort = new ReceivePort();
   SendPort outBoundMessagePort;
+  SendPort reponsePort = startupArgs[1];
   final String serviceIdent = Isolate.current.hashCode.toString();
 
   /// Service Credentials return back to provisioner as proof of life.
@@ -34,7 +35,7 @@ main(List startupArgs, int startupCode) {
     'ServiceVMVersion': Platform.version,
     'ServiceSourcePath': Platform.packageRoot,
     'ServiceStartScript': Platform.script.toString(),
-    'ServiceRequestPort': actualServiceRequestPort.sendPort,
+    'ServiceRequestPort': serviceRequestPort.sendPort,
   };
 
   /// **Executes the Port Exchange Protocol.**
@@ -62,10 +63,10 @@ main(List startupArgs, int startupCode) {
   /// it receives the credentials map. Upon registration the provisioner may do further
   /// configurations.
   exchangePorts(List startArgs, Map credentials) {
-    SendPort temporaryXchgPort = startArgs[0];
-    assert(temporaryXchgPort != null);
-    temporaryXchgPort.send(credentials);
-    log('Ports Exchanged');
+    SendPort provisionPortSendPort = startArgs[0];
+    assert(provisionPortSendPort != null);
+    provisionPortSendPort.send(credentials);
+    log('Credentials & Ports Exchanged');
   }
 
   ////////////////////////////////
@@ -78,14 +79,12 @@ main(List startupArgs, int startupCode) {
   /// ServiceResponsePort has response to consumer request sent on.
   echoService(Map serviceDetails, ReceivePort serviceRequest,
       SendPort serviceResponse) {
-    SendPort responsePort = serviceDetails['ServiceResponse'];
     String serviceName = serviceDetails['ServiceName'];
     String serviceVersion = serviceDetails['ServiceVersion'];
     String serviceId = serviceDetails['ServiceId'];
-    log('Echo Service');
 
     serviceRequest.listen((Map request) {
-      log('Message Received');
+      log('Message Received By Echo Service. $request');
       Map response = {
         'ServiceRequestReceived': new DateTime.now().microsecondsSinceEpoch,
         'ServiceRequestTrxNum': request.containsKey('requestId')
@@ -99,8 +98,8 @@ main(List startupArgs, int startupCode) {
             : 'Payload of this request was empty',
         'ServiceResponseDispatched': new DateTime.now().microsecondsSinceEpoch
       };
-
-      responsePort.send(response);
+      log("Echo Service Response: $response");
+      serviceResponse.send(response);
     });
   }
 
@@ -113,7 +112,8 @@ main(List startupArgs, int startupCode) {
   // Open the doors for business by handing over the credentials and the
   // inBoundMessage Port, which has yet to be listened too.
   setupService(Map creds, ReceivePort requestPort) {
-    echoService(creds, actualServiceRequestPort, startupArgs[1]);
+    log('Service Setup');
+    echoService(creds, serviceRequestPort, startupArgs[1]);
   }
 
   /// Informs the provisioner that a port exchange is not possible.
@@ -123,9 +123,10 @@ main(List startupArgs, int startupCode) {
         "No Stack");
   }
 
-  isPortExchangeRequested()
-      ? isPortExchangePossible()
-          ? exchangePorts(startupArgs, serviceCreds)
-          : sendProvisionFail()
-      : setupService(serviceCreds, actualServiceRequestPort);
+  if (isPortExchangeRequested() && isPortExchangePossible()) {
+    exchangePorts(startupArgs, serviceCreds);
+    setupService(serviceCreds, serviceRequestPort);
+  } else {
+    sendProvisionFail();
+  }
 }

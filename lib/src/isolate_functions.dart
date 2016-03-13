@@ -3,21 +3,28 @@ library isolateFunctions;
 import 'dart:async';
 import 'dart:isolate';
 
-/// Returns a list will the provision port, service port and Isolate.
+/// Returns a list containing the Isolate, a provision receiving port and a request Port (SendPort)
+/// of the just provisioned service.
+///
+/// The new Service is in a state where it needs to provide a serviceRequestPort and indentify itself during the
+/// process. It useds the provisionPort.sendPort passed during spawning to achieve this.
+/// The spawning payload already containts the sendPort where it should send it's respondes.
 Future<List> spawnIsolate(Uri serviceEntry, Uri rootPack) async {
-  var servicePort = new ReceivePort();
+  var serviceResponsePort = new ReceivePort();
   var provisionPort = new ReceivePort();
-  var startupArgs = [provisionPort.sendPort, servicePort.sendPort];
+  var startupArgs = [provisionPort.sendPort, serviceResponsePort.sendPort];
   var startupCode = 9999;
   return Isolate
       .spawnUri(serviceEntry, startupArgs, startupCode, packageRoot: rootPack)
       .then((Isolate iso) {
-    List provisioned = [provisionPort, servicePort, iso];
+    List provisioned = [provisionPort, serviceResponsePort, iso];
     return provisioned;
   });
 }
 
-/// Listens on provision port for the service details.
+/// Listens to the provision port passed during spawning for an service credential
+/// map, which contains details of the service along with a serviceRequestPort(sendPort)
+/// where the service wants it's request sent.
 Future<Map> identifyService(ReceivePort provisionPort) {
   var completer = new Completer();
   identficationComplete(Map identity) {
