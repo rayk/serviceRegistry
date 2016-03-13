@@ -18,22 +18,27 @@ ServiceRegistry serviceRegister() => new ServiceRegistry();
 /// package location of the source file. This are convert to Platform specific
 /// path names, allowing it to work across environments.
 Future<ServiceRegistration> startService(
-    List<String> entryPointWithPath, List<String> servicePackageRoot) async {
+    List<String> entryPointWithPath, List<String> servicePackageRoot) {
   Uri entryPoint = toUri(entryPointWithPath);
   Uri packageRoot = toUri(servicePackageRoot);
-  bool entryExist = await fileExist(entryPoint);
-  bool packageExist = await dirExist(packageRoot);
-  if (entryExist && packageExist) {
-    spawnIsolate(entryPoint, packageRoot).then((List provisioned) {
-      identifyService(provisioned[0]).then((Map serviceDetails) {
-        return new ServiceRegistration(
-            provisioned[2], serviceDetails, provisioned[1]);
+  try {
+    return spawnIsolate(entryPoint, packageRoot).then((List iso) {
+      assert(iso[0] is ReceivePort);
+      return identifyService(iso[0]).then((Map svcDetails) {
+        assert(svcDetails['ServiceRequestPort'] is SendPort);
+        assert(iso[1] is ReceivePort);
+        assert(iso[2] is Isolate);
+        return new ServiceRegistration(iso[2], svcDetails, iso[1]);
       });
     });
+  } on IsolateSpawnException {
+    // Throw on problem the entry point was wrong.
+  } on RemoteError {
+    // Throw on problem with service communication.
   }
 }
 
-/// Returns a ServiceRegistry when the requested service has been terminated.
+/// Returns a ServiceRegistry when the requested service has been stopped.
 ///
 /// After the [targetService] completes it's current task, if there is one.
 /// The service along with all it's communication channels and any other resources
@@ -41,33 +46,7 @@ Future<ServiceRegistration> startService(
 ///
 /// Failure to terminate will result an exception, which can dealt with by calling
 /// terminate again.
-Future<ServiceRegistry> terminateService(
-    ServiceRegistration targetService) async {
+ServiceRegistry stopService(ServiceRegistration targetService) {
+  targetService.shutdown();
   return serviceRegister();
-}
-
-/// Privately register the service.
-Future<ServiceRegistration> _registerIsolate(Uri serviceEntryPoint,
-    {bool channelRequired: true}) async {
-  ServiceRegistration rego;
-  ReceivePort tempProvisionPort = new ReceivePort();
-  ReceivePort actualServicePort = new ReceivePort();
-  List startArgs = [tempProvisionPort.sendPort, actualServicePort.sendPort];
-  int startCode;
-  channelRequired ? startCode = 9999 : startCode = 0000;
-  Isolate.spawnUri(serviceEntryPoint, startArgs, startCode).then((Isolate iso) {
-    _identifyIsolate(tempProvisionPort).then((Map creds) {
-      rego = new ServiceRegistration(iso, creds, actualServicePort);
-    });
-    return rego;
-  });
-}
-
-/// Listen for the Service Credentials and then close the provisioning port.
-Future<Map> _identifyIsolate(ReceivePort provisionPort) async {
-  provisionPort.listen((Map credentials) {
-    assert(credentials.length == 8);
-    provisionPort.close();
-    return credentials;
-  });
 }

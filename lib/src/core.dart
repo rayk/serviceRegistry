@@ -2,6 +2,8 @@ library api.types;
 
 import 'dart:async';
 import 'dart:isolate';
+import 'dart:developer';
+import 'dart:collection';
 
 import 'package:stream_channel/stream_channel.dart';
 
@@ -24,11 +26,13 @@ class ServiceRegistration {
   SendPort _controlPort, _serviceRequest;
   Stream _broadcastedErrors;
   ReceivePort _serviceResponses, _exitAlertPort, _errorMonitorPort;
+  Isolate _underlyingIsolate;
 
   /// Creates Service Registration and places it on the registry if it't there.
   ///
   /// This is the dependence on Service Registry.
   ServiceRegistration(Isolate iso, Map credentials, ReceivePort servicePort) {
+    _underlyingIsolate = iso;
     _pauseCapability = iso.pauseCapability;
     _terminateCapability = iso.terminateCapability;
     _controlPort = iso.controlPort;
@@ -41,8 +45,6 @@ class ServiceRegistration {
     _serviceSourcePath = credentials['ServiceSourcePath'];
     _serviceStartScript = credentials['ServiceStartScript'];
     _serviceRequest = credentials['ServiceRequestPort'];
-    _exitAlertPort = ServiceRegistry._exitMonitorPort;
-    _errorMonitorPort = ServiceRegistry._errorMonitorPort;
     _channel = new IsolateChannel(_serviceResponses, _serviceRequest);
     ServiceRegistry._addService(this);
   }
@@ -113,6 +115,14 @@ class ServiceRegistration {
   /// selection bases for a old and new version runing at the same time.
   String get version => _serviceVersion;
 
+  /// Shuts down the service and frees all the associated resources.
+  void shutdown() {
+    _underlyingIsolate.kill();
+    _serviceResponses.close();
+    _channel.sink.close();
+    ServiceRegistry._removeService(this);
+  }
+
   @override
 
   /// Returns a details string repersentation of the ServiceRegistration.
@@ -147,13 +157,48 @@ class ServiceRegistry {
 
   ServiceRegistry._internal();
 
-  /// Returns a list of al currently available services.
-  /// available services.
-  List<ServiceRegistration> get availableServices => _currentServices;
+  /// Returns a immutable list of all currently available services.
+  ///
+  ///
+  UnmodifiableListView<ServiceRegistration> get services {
+    return new UnmodifiableListView(_currentServices);
+  }
 
   // Handles the Registration of new services.
   static _addService(ServiceRegistration rego) {
+    rego._underlyingIsolate.addOnExitListener(_exitMonitorPort.sendPort,
+        response: {'IsolateID': rego.id});
+    rego._exitAlertPort = _errorMonitorPort;
+    rego._underlyingIsolate.addErrorListener(_errorMonitorPort.sendPort);
+    rego._errorMonitorPort = _errorMonitorPort;
     _currentServices.removeWhere((e) => (e.id == rego.id));
     _currentServices.add(rego);
   }
+
+  // Handles the removal of a new service Registration.
+  //
+  // The service is removed from the registry before it is
+  // actual killed, to reduce the window as to being able to
+  // service schedule for termination.
+  static _removeService(ServiceRegistration rego) {
+    _currentServices.removeWhere((e) => (e.id == rego.id));
+  }
+
+  /// Listens to every service that the registry knowns about and when on of them
+  /// exits it ensures the registery is updated. This a service in this case
+  /// could be in the registery longer then it actually exist.
+  _exitLister() {
+    _exitMonitorPort.listen((Map exitMessage) {
+      log('Termination Message received');
+      ServiceRegistration service = _currentServices
+          .firstWhere((element) => (element.id == exitMessage['ServiceId']));
+      assert(service != null);
+      // Here check if the registration is still in the register, if so
+      // restart it. Else it has been stoped by the user.
+    });
+  }
+
+  /// Listens for error from an any of the isolates and decides what actions
+  /// are required.
+  _errorLister() {}
 }

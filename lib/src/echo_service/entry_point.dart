@@ -31,7 +31,7 @@ main(List startupArgs, int startupCode) {
     'ServiceId': serviceIdent,
     'ServiceEnvironment': Platform.operatingSystem,
     'ServiceVMVersion': Platform.version,
-    'ServiceSourcePath': Platform.packageConfig,
+    'ServiceSourcePath': Platform.packageRoot,
     'ServiceStartScript': Platform.script.toString(),
     'ServiceRequestPort': actualServiceRequestPort.sendPort,
   };

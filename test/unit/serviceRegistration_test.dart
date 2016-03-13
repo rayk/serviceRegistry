@@ -1,6 +1,8 @@
 import 'dart:isolate';
 
 import 'package:serviceRegistry/src/core.dart';
+import 'package:serviceRegistry/src/isolate_functions.dart';
+import 'package:serviceRegistry/src/path_functions.dart';
 @TestOn('vm')
 import 'package:test/test.dart';
 
@@ -40,7 +42,7 @@ main() {
 
       ServiceRegistry registry = new ServiceRegistry();
 
-      List serviceList = registry.availableServices;
+      List serviceList = registry.services;
 
       expect(serviceList.isNotEmpty, isTrue, reason: 'Service Not Listed');
 
@@ -84,7 +86,7 @@ main() {
 
       ServiceRegistry registry = new ServiceRegistry();
 
-      List serviceList = registry.availableServices;
+      List serviceList = registry.services;
 
       expect(serviceList.length, equals(1),
           reason: 'Should not add existing service');
@@ -93,7 +95,7 @@ main() {
           serviceList.first, equals(new isInstanceOf<ServiceRegistration>()));
     });
 
-    test('Should another second entry for different service.', () {
+    test('Should create another second entry for different service.', () {
       ReceivePort mockServicePort = new ReceivePort();
       final Map<String, String> serviceCreds = {
         'ServiceName': "SecondTestServiceName",
@@ -127,11 +129,33 @@ main() {
 
       ServiceRegistry registry = new ServiceRegistry();
 
-      List serviceList = registry.availableServices;
+      List serviceList = registry.services;
 
       expect(serviceList.length, equals(2), reason: 'Second Service Missing!');
 
       expect(serviceList.last, equals(new isInstanceOf<ServiceRegistration>()));
+    });
+  });
+  group("Shutting down a service frees the resources.", () {
+    test('Should  .', () async {
+      final Map<String, String> serviceCreds = {
+        'ServiceName': "SecondTestServiceName",
+        'ServiceVersion': '2',
+        'ServiceId': '23948329578',
+        'ServiceEnvironment': 'MacOSX',
+        'ServiceVMVersion': '1.15.0',
+        'ServiceSourcePath': '/package',
+        'ServiceStartScript': '/script2.dart',
+      };
+      var entryPath = toUri(['lib', 'src', 'echo_service', 'entry_point.dart']);
+      var rootPack = toUri(['lib', 'src', 'echo_service']);
+      spawnIsolate(entryPath, rootPack).then((List isoDetails) async {
+        serviceCreds['ServiceRequestPort'] = isoDetails[1].sendPort;
+        var mockService =
+            new ServiceRegistration(isoDetails[2], serviceCreds, isoDetails[0]);
+        mockService.shutdown();
+        expect(await isIsolateAlive(isoDetails[2]), isFalse);
+      });
     });
   });
 }
