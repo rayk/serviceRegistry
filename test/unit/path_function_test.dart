@@ -1,6 +1,5 @@
 @TestOn('vm')
 import 'package:test/test.dart';
-import 'dart:io';
 
 import 'package:serviceRegistry/src/path_functions.dart';
 

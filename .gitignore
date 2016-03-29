@@ -4,6 +4,7 @@
 build/
 packages
 pubspec.lock
+.atom
 
 # Files created by dart2js
 *.dart.js

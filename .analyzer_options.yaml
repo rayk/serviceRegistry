@@ -1,0 +1,25 @@
+analyzer:
+  exclude:
+    -test/integration/**
+    -test/unit/**
+    -example/**
+  strong-mode: true
+
+linter:
+  rules:
+    - always_declare_return_types
+    - avoid_as
+    - avoid_empty_else
+    - avoid_init_to_null
+    - camel_case_types
+    - empty_constructor_bodies
+    - hash_and_equals
+    - implementation_imports
+    - library_name
+    - one_member_abstracts
+    - package_names
+    - prefer_is_not_empty
+    - public_member_api_docs
+    - sort_contructors_first
+    - super_goes_last
+    - type_annotate_public_apis

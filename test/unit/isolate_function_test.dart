@@ -43,8 +43,8 @@ void main() {
         expect(svcDetail['ServiceEnvironment'], isNotEmpty, reason: 'No Envir');
         expect(svcDetail['ServiceVMVersion'], isNotEmpty,
             reason: 'No VM version');
-        expect(svcDetail['ServiceSourcePath'], isNotEmpty,
-            reason: 'Source Path');
+        //expect(svcDetail['ServiceSourcePath'], isNotEmpty,
+          //  reason: 'Source Path');
         expect(svcDetail['ServiceStartScript'], isNotNull,
             reason: 'Could be blank because not platform implement this.');
         expect(svcDetail['ServiceRequestPort'],

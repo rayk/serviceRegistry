@@ -15,7 +15,7 @@ Future<List> spawnIsolate(Uri serviceEntry, Uri rootPack) async {
   var startupArgs = [provisionPort.sendPort, serviceResponsePort.sendPort];
   var startupCode = 9999;
   return Isolate
-      .spawnUri(serviceEntry, startupArgs, startupCode, packageRoot: rootPack)
+      .spawnUri(serviceEntry, startupArgs, startupCode, automaticPackageResolution: true)
       .then((Isolate iso) {
     List provisioned = [provisionPort, serviceResponsePort, iso];
     return provisioned;

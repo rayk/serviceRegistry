@@ -1,8 +1,11 @@
 library echoService;
 
+/// These are resolved via PackageRoot.
 import 'dart:developer';
 import 'dart:io';
 import 'dart:isolate';
+
+import 'second_source.dart';
 
 /// This service is used as a test service to determine if a new service can be
 /// provision.
@@ -16,6 +19,11 @@ import 'dart:isolate';
 /// Main entry point for a service, Args and startup code is used to establish
 /// any required shaking.
 main(List startupArgs, int startupCode) {
+
+  int val = importedFun(5);
+  assert(val == 10);
+
+
   assert(startupArgs.isNotEmpty);
   assert(startupCode != null);
   final String serviceName = "EchoService";

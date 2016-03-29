@@ -24,7 +24,6 @@ class ServiceRegistration {
   IsolateChannel _channel;
   Capability _pauseCapability, _terminateCapability;
   SendPort _controlPort, _serviceRequest;
-  Stream _broadcastedErrors;
   ReceivePort _serviceResponses, _exitAlertPort, _errorMonitorPort;
   Isolate _underlyingIsolate;
 
@@ -125,7 +124,7 @@ class ServiceRegistration {
 
   @override
 
-  /// Returns a details string repersentation of the ServiceRegistration.
+  /// Returns a details string representation of the ServiceRegistration.
   toString() {
     StringBuffer sb = new StringBuffer("* ServiceRegistration Object *\r");
     sb.writeln("$type, version:$version, id:$id, created:$createdDateTime");
@@ -185,8 +184,8 @@ class ServiceRegistry {
   }
 
   /// Listens to every service that the registry knowns about and when on of them
-  /// exits it ensures the registery is updated. This a service in this case
-  /// could be in the registery longer then it actually exist.
+  /// exits it ensures the registry is updated. This a service in this case
+  /// could be in the register longer then it actually exist.
   _exitLister() {
     _exitMonitorPort.listen((Map exitMessage) {
       log('Termination Message received');

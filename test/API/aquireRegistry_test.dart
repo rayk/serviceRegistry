@@ -1,6 +1,4 @@
-import 'package:path/path.dart' as path;
 import 'package:serviceRegistry/serviceRegistry.dart';
-import 'package:serviceRegistry/src/isolate_functions.dart';
 import 'dart:async';
 
 /// API Test of get hold of the registry under different conditions and ensure
@@ -107,7 +105,7 @@ void main() {
         if (regoExternalToThisTest != null) {
           expect(regtest.services.contains((regoExternalToThisTest)), isTrue);
           stopService(regoExternalToThisTest);
-          expect(regtest.services.isEmpty, isTure);
+          expect(regtest.services.isEmpty, isTrue);
         }
       });
     });
