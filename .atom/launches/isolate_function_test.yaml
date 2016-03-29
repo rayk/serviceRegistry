@@ -1,0 +1,9 @@
+# Cli launch configuration for test/unit/isolate_function_test.dart.
+type: cli
+path: test/unit/isolate_function_test.dart
+
+cli:
+  args: 
+  cwd: 
+  checked: true
+  debug: true

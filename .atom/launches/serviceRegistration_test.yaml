@@ -1,0 +1,9 @@
+# Cli launch configuration for test/unit/serviceRegistration_test.dart.
+type: cli
+path: test/unit/serviceRegistration_test.dart
+
+cli:
+  args: 
+  cwd: 
+  checked: true
+  debug: true

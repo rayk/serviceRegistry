@@ -1,8 +1,28 @@
-/// This example shows how to establish a service via the service registry
-/// then access to port details from the registry. The later part of this
-/// is is what would happen more in the a Message function, but it is shown
-/// has as an example.
+/// This code example can be executed from the CLI and demonstrates the provisioning
+/// of the default echo service. Sending it a message and the message being returned.
 
 library serviceRegistry.example;
 
-main() {}
+import 'dart:async';
+import 'dart:developer';
+
+import 'package:serviceRegistry/serviceRegistry.dart';
+
+main() async {
+  var echoServicePath = ['lib', 'src', 'echo_service', 'entry_point.dart'];
+  var packagePath = ['lib', 'src', 'echo_service'];
+
+  var serviceReg = await startService(echoServicePath, packagePath);
+  print('Your ${serviceReg.type} has been provisioned!');
+  Stream inbound = serviceReg.receiveChannel;
+  StreamSink outbound = serviceReg.sendChannel;
+
+  Map request = {'requestId': "209358", 'payload': 'Hello it is me'};
+
+  inbound.listen((Map msg) {
+    log('Message Received from Echo $msg;');
+  });
+
+  outbound.add(request);
+  log('Message Sent to Echo Service');
+}
