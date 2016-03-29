@@ -20,11 +20,11 @@ Future<ServiceRegistry> provisionService(Uri pathToServiceEntryPoint) async {
     List startArg = [];
     int startCode = 0000;
     await Isolate
-        .spawnUri(pathToServiceEntryPoint, startArg, startCode)
+        .spawnUri(pathToServiceEntryPoint, startArg, startCode, automaticPackageResolution: true)
         .then((Isolate iso) {
       assert(iso != null);
     });
-    // Any Expection shall cause a crash.
+    // Any Exception shall cause a crash.
   } catch (e) {
     print(e.message);
   }
