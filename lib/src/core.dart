@@ -25,7 +25,7 @@ class ServiceRegistry {
   }
 }
 
-/// Represents a currently available service.
+/// Repersents a currently available service.
 class ServiceRegistration {
   String _serviceType;
   int _serviceVersion;
