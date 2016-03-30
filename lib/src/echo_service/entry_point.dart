@@ -7,6 +7,7 @@ import 'dart:isolate';
 
 import 'second_source.dart';
 
+/// This is an example service.
 /// This service is used as a test service to determine if a new service can be
 /// provision.
 /// Once provisioned on it's own isolate, able to undertake a port exchange
@@ -20,6 +21,7 @@ import 'second_source.dart';
 /// any required shaking.
 main(List startupArgs, int startupCode) {
 
+  /// Inline test that it can Import second_source.
   int val = importedFun(5);
   assert(val == 10);
 

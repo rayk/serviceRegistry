@@ -5,8 +5,8 @@
 /// functions that provision and terminate services.
 ///
 /// Provisioning entails ensuring the code for the specified service has it
-/// own execution loop and heap space. Once provisioned the registry is updated
-/// to contain the objects required to use the service.
+/// own execution loop and heap space (Isolate and Channels). Once provisioned the registry is updated
+/// to contain the [ServiceRegistration] required to use the service.
 ///
 /// The Registry is a Singleton hence it is not possible to a reference to a
 /// service which is not current.

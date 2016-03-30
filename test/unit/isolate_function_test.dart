@@ -7,59 +7,65 @@ import 'package:serviceRegistry/src/path_functions.dart';
 import 'package:test/test.dart';
 
 void main() {
-  group("Spawns Isolate.", () {
-    test('Should return a list with Isolates and ports.', () async {
-      var entryPath = toUri(['lib', 'src', 'echo_service', 'entry_point.dart']);
-      var rootPack = toUri(['lib', 'src', 'echo_service']);
-      var isoDetails = await spawnIsolate(entryPath, rootPack);
-      expect(isoDetails, equals(new isInstanceOf<List>()));
-      expect(isoDetails.length, equals(3));
-      expect(isoDetails[0], equals(new isInstanceOf<ReceivePort>()));
-      expect(isoDetails[1], equals(new isInstanceOf<ReceivePort>()));
-      expect(isoDetails[2], equals(new isInstanceOf<Isolate>()));
+  group("Spawns Isolates:", () {
+
+    test('Should actually create an Running Isolate.',() async{
+      var entryPath =
+      toUri(['example', 'echoServiceExample', 'entry_point.dart']);
+      List serviceArgs = ['a', 'b', 'c', 'd'];
+      Map isoDetails = await spawnIsolate(entryPath, serviceArgs);
+      ReceivePort testPingResponsePort = new ReceivePort();
+      Isolate iso = isoDetails['isolate'];
+      iso.ping(testPingResponsePort.sendPort, response: "pingTest");
+
+      testPingResponsePort.listen(expectAsync((String msg){
+        expect(msg, equals('pingTest'));
+        iso.kill();
+        testPingResponsePort.close();
+        isoDetails.forEach((K,V) {
+          if( V is ReceivePort){
+            V.close();
+          }
+        });
+      }, count:1));
     });
 
-    test('Should expection if a non-existent entrypoint is passed in.',
-        () async {
+    test('Should return a Map with Isolates and ports.', () async {
       var entryPath =
-          toUri(['lib', 'src', 'echo_service', 'does_not_exist.dart']);
-      var rootPack = toUri(['lib', 'src', 'echo_service']);
-      expect(spawnIsolate(entryPath, rootPack),
+      toUri(['example', 'echoServiceExample', 'entry_point.dart']);
+      List serviceArgs = [];
+      Map isoDetails = await spawnIsolate(entryPath, serviceArgs);
+      expect(isoDetails, isMap);
+      expect(isoDetails['isolate'], equals(new isInstanceOf<Isolate>()));
+      expect(
+          isoDetails['onErrorPort'], equals(new isInstanceOf<ReceivePort>()));
+      expect(isoDetails['onExitPort'], equals(new isInstanceOf<ReceivePort>()));
+      expect(isoDetails['onExitSignature'], contains("EXIT"));
+      expect(isoDetails['serviceResponseOnPort'],
+          equals(new isInstanceOf<ReceivePort>()));
+      expect(isoDetails['tempExchangePort'],
+          equals(new isInstanceOf<ReceivePort>()));
+
+      isoDetails.forEach((K,V) {
+        if( V is ReceivePort){
+          V.close();}
+      });
+
+      isoDetails['isolate'].kill();
+
+    });
+
+
+    test('Should Exception with a non-existent entrypoint.', () async {
+      var entryPath = toUri(['echo_service', 'does_not_exist.dart']);
+      List serviceArgs = ['a', 'b', 'c', 'd'];
+      expect(spawnIsolate(entryPath, serviceArgs),
           throwsA(new isInstanceOf<IsolateSpawnException>()));
     });
-  });
 
-  group("Receive handshake:", () {
-    test('Should receive a map with service.', () async {
-      var entryPath = toUri(['lib', 'src', 'echo_service', 'entry_point.dart']);
-      var rootPack = toUri(['lib', 'src', 'echo_service']);
-      spawnIsolate(entryPath, rootPack).then((List isoDetails) async {
-        Map svcDetail = await identifyService(isoDetails[0]);
-        expect(svcDetail.length, equals(8));
-        expect(svcDetail['ServiceName'], isNotEmpty, reason: 'No Service Name');
-        expect(svcDetail['ServiceVersion'], isNotEmpty, reason: 'No Version');
-        expect(svcDetail['ServiceId'], isNotEmpty, reason: 'No Service ID');
-        expect(svcDetail['ServiceId'].length, greaterThanOrEqualTo(6));
-        expect(svcDetail['ServiceEnvironment'], isNotEmpty, reason: 'No Envir');
-        expect(svcDetail['ServiceVMVersion'], isNotEmpty,
-            reason: 'No VM version');
-        //expect(svcDetail['ServiceSourcePath'], isNotEmpty,
-          //  reason: 'Source Path');
-        expect(svcDetail['ServiceStartScript'], isNotNull,
-            reason: 'Could be blank because not platform implement this.');
-        expect(svcDetail['ServiceRequestPort'],
-            equals(new isInstanceOf<SendPort>()));
-      });
-    });
-  });
 
-  group("Isolate Live Check:", () {
-    test("Should response to pings when the Isolate is alive", () async {
-      var entryPath = toUri(['lib', 'src', 'echo_service', 'entry_point.dart']);
-      var rootPack = toUri(['lib', 'src', 'echo_service']);
-      var isoDetails = await spawnIsolate(entryPath, rootPack);
-      bool reply = await isIsolateAlive(isoDetails[2]);
-      expect(reply, isTrue);
-    });
   });
 }
+
+
+

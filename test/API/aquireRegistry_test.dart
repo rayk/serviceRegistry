@@ -32,12 +32,12 @@ void main() {
     var entryPoint =
         new List.from(['lib', 'src', 'echo_service', 'entry_point.dart']);
     var package = new List.from(['lib', 'src', 'echo_service']);
+    var serviceArgs = new List.from(['arg1', 'arg2', 'arg3', 'arg4']);
 
     test('Should start new service an update registry with registration.',
         () async {
       ServiceRegistry reg = new ServiceRegistry();
-      startService(entryPoint, package).then((ServiceRegistration rego) {
-        expect(rego, isNotNull);
+      startService(entryPoint, package, serviceArguments:serviceArgs).then((ServiceRegistration rego) {
         expect(rego.canAutoManage, isTrue, reason: 'Should be manageable');
         expect(rego.canMessage, isTrue, reason: 'should be able to send msgs');
         expect(rego.canPause, isTrue, reason: 'should have pause capabilities');
